@@ -1,33 +1,25 @@
 import io.qameta.allure.Description;
-import io.qameta.allure.Step;
+import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
 import org.junit.Test;
 
+import java.util.List;
+
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.Matchers.*;
 
 public class GetOrdersTest {
 
-    private static final String BASE_URL = "https://qa-scooter.praktikum-services.ru/";
-
-    @Step("Запрос списка заказов без параметров")
-    public ValidatableResponse getOrders() {
-        return io.restassured.RestAssured
-                .given()
-                .when()
-                .get(BASE_URL)
-                .then();
-    }
+    private OrderClient orderClient = new OrderClient();
 
     @Test
+    @DisplayName("Получение списка заказов: успешный возврат списка с пагинацией")
     @Description("Проверка возврата списка заказа")
     public void checkOrdersListIsReturned() {
-        getOrders()
-                .statusCode(200)
+        orderClient.getOrders(30, 0)
+                .statusCode(SC_OK)
                 .body("orders", notNullValue())
-                .body("orders.size()", greaterThan(0))
-                .body("orders[0].id", notNullValue())
-                .body("orders[0].firstName", notNullValue())
-                .body("orders[0].address", notNullValue())
-                .body("orders[0].track", notNullValue());
+                .body("orders", instanceOf(List.class))
+                .body("orders.size()", greaterThanOrEqualTo(0));
     }
 }

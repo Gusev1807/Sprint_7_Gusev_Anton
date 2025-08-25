@@ -1,8 +1,10 @@
 import io.qameta.allure.Description;
+import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.Matchers.*;
 
 public class GetOrderByTrackTest {
@@ -19,27 +21,30 @@ public class GetOrderByTrackTest {
     }
 
     @Test
+    @DisplayName("Получение заказа: успешный поиск по трек-номеру")
     @Description("Успешное получение заказа по трек-номеру")
     public void getOrderByTrackSuccessfully() {
         orderClient.getOrderByTrack(orderTrack)
-                .statusCode(200)
+                .statusCode(SC_OK)
                 .body("order", notNullValue())
                 .body("order.track", equalTo(orderTrack));
     }
 
     @Test
+    @DisplayName("Получение заказа: ошибка при отсутствии трек-номера")
     @Description("Попытка получить заказ без трек-номера возвращает ошибку")
     public void getOrderWithoutTrack() {
         orderClient.getOrderByTrack(null)
-                .statusCode(400)
+                .statusCode(SC_BAD_REQUEST)
                 .body("message", equalTo("Недостаточно данных для поиска"));
     }
 
     @Test
+    @DisplayName("Получение заказа: ошибка при несуществующем трек-номере")
     @Description("Попытка получить несуществующий заказ возвращает ошибку")
     public void getNonExistentOrder() {
         orderClient.getOrderByTrack(999999)
-                .statusCode(404)
+                .statusCode(SC_NOT_FOUND)
                 .body("message", equalTo("Заказ не найден"));
     }
 }

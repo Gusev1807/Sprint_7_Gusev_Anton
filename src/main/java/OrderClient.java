@@ -1,21 +1,14 @@
 import io.qameta.allure.Step;
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
+import java.util.HashMap;
+import java.util.Map;
 
-import static io.restassured.RestAssured.given;
-
-public class OrderClient {
+public class OrderClient extends BaseClient {
     private static final String BASE_PATH = "/api/v1/orders";
-
-    public OrderClient() {
-        RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru/";
-    }
 
     @Step("Создать заказ с параметрами: {order}")
     public ValidatableResponse createOrder(Order order) {
-        return given()
-                .contentType(ContentType.JSON)
+        return reqSpec
                 .body(order)
                 .when()
                 .post(BASE_PATH)
@@ -25,7 +18,7 @@ public class OrderClient {
     @Step("Принять заказ: orderId={orderId}, courierId={courierId}")
     public ValidatableResponse acceptOrder(Integer orderId, Integer courierId) {
         String url = BASE_PATH + (orderId != null ? "/accept/" + orderId : "/accept/");
-        return given()
+        return reqSpec
                 .queryParam("courierId", courierId)
                 .when()
                 .put(url)
@@ -34,7 +27,7 @@ public class OrderClient {
 
     @Step("Получить заказ по трек-номеру: track={track}")
     public ValidatableResponse getOrderByTrack(Integer track) {
-        return given()
+        return reqSpec
                 .queryParam("t", track)
                 .when()
                 .get(BASE_PATH + "/track")
@@ -43,7 +36,7 @@ public class OrderClient {
 
     @Step("Получить список заказов с лимитом {limit} и страницей {page}")
     public ValidatableResponse getOrders(int limit, int page) {
-        return given()
+        return reqSpec
                 .queryParam("limit", limit)
                 .queryParam("page", page)
                 .when()
@@ -51,11 +44,20 @@ public class OrderClient {
                 .then();
     }
 
+    @Step("Получить ID первого доступного заказа")
+    public int getFirstAvailableOrderId() {
+        return getOrders(10, 0)
+                .extract()
+                .path("orders[0].id");
+    }
+
     @Step("Отменить заказ с трекингом: {track}")
     public ValidatableResponse cancelOrder(int track) {
-        return given()
-                .contentType(ContentType.JSON)
-                .body("{\"track\": " + track + "}")
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("track", track);
+
+        return reqSpec
+                .body(requestBody)
                 .when()
                 .put(BASE_PATH + "/cancel")
                 .then();
